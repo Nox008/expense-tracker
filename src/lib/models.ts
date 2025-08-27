@@ -4,19 +4,34 @@ import mongoose, { Document, Schema, Model } from 'mongoose';
 
 // Interface for Project document
 export interface IProject extends Document {
+  _id: mongoose.Types.ObjectId;
   name: string;
   budget: number;
-  startDate: Date;
-  endDate?: Date;
+  description?: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 // Interface for Expense document
 export interface IExpense extends Document {
+  _id: mongoose.Types.ObjectId;
   amount: number;
   category: string;
   note?: string;
   date: Date;
   projectId: mongoose.Types.ObjectId;
+  createdAt: Date;
+}
+
+// Interface for Project Expense (separate from regular expenses)
+export interface IProjectExpense extends Document {
+  _id: mongoose.Types.ObjectId;
+  projectId: mongoose.Types.ObjectId;
+  amount: number;
+  description: string;
+  category?: string;
+  date: Date;
+  createdAt: Date;
 }
 
 // Project Schema
@@ -29,17 +44,18 @@ const ProjectSchema: Schema<IProject> = new Schema({
   budget: {
     type: Number,
     required: [true, 'Please provide a budget.'],
+    min: [0, 'Budget must be a positive number.'],
   },
-  startDate: {
-    type: Date,
-    required: [true, 'Please provide a start date.'],
+  description: {
+    type: String,
+    trim: true,
   },
-  endDate: {
-    type: Date,
-  },
+  
+}, {
+  timestamps: true, // This adds createdAt and updatedAt automatically
 });
 
-// Expense Schema
+// Regular Expense Schema (your existing expenses)
 const ExpenseSchema: Schema<IExpense> = new Schema({
   amount: {
     type: Number,
@@ -63,8 +79,46 @@ const ExpenseSchema: Schema<IExpense> = new Schema({
     ref: 'Project',
     required: true,
   },
+}, {
+  timestamps: true,
 });
+
+// Project Expense Schema (separate collection for project-specific expenses)
+const ProjectExpenseSchema: Schema<IProjectExpense> = new Schema({
+  projectId: {
+    type: Schema.Types.ObjectId,
+    ref: 'Project',
+    required: [true, 'Project ID is required.'],
+  },
+  amount: {
+    type: Number,
+    required: [true, 'Please provide an expense amount.'],
+    min: [0, 'Amount must be a positive number.'],
+  },
+  description: {
+    type: String,
+    required: [true, 'Please provide a description.'],
+    trim: true,
+  },
+  category: {
+    type: String,
+    trim: true,
+  },
+  date: {
+    type: Date,
+    required: [true, 'Please provide a date.'],
+    default: Date.now,
+  },
+}, {
+  timestamps: true,
+});
+
+// Add indexes for better performance
+ProjectSchema.index({ createdAt: -1 });
+ProjectExpenseSchema.index({ projectId: 1, createdAt: -1 });
+ExpenseSchema.index({ projectId: 1, date: -1 });
 
 // To prevent model overwrite errors in development, we check if the model already exists.
 export const Project: Model<IProject> = mongoose.models.Project || mongoose.model<IProject>('Project', ProjectSchema);
 export const Expense: Model<IExpense> = mongoose.models.Expense || mongoose.model<IExpense>('Expense', ExpenseSchema);
+export const ProjectExpense: Model<IProjectExpense> = mongoose.models.ProjectExpense || mongoose.model<IProjectExpense>('ProjectExpense', ProjectExpenseSchema);
