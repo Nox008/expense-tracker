@@ -23,6 +23,16 @@ export interface IExpense extends Document {
   createdAt: Date;
 }
 
+// NEW: Interface for Income document
+export interface IIncome extends Document {
+  _id: mongoose.Types.ObjectId;
+  amount: number;
+  source: string;
+  note?: string;
+  date: Date;
+  createdAt: Date;
+}
+
 // Interface for Project Expense (separate from regular expenses)
 export interface IProjectExpense extends Document {
   _id: mongoose.Types.ObjectId;
@@ -83,6 +93,30 @@ const ExpenseSchema: Schema<IExpense> = new Schema({
   timestamps: true,
 });
 
+// NEW: Income Schema
+const IncomeSchema: Schema<IIncome> = new Schema({
+  amount: {
+    type: Number,
+    required: [true, 'Please provide an income amount.'],
+    min: [0, 'Amount must be a positive number.'],
+  },
+  source: {
+    type: String,
+    required: [true, 'Please provide an income source.'],
+    trim: true,
+  },
+  note: {
+    type: String,
+    trim: true,
+  },
+  date: {
+    type: Date,
+    default: Date.now,
+  },
+}, {
+  timestamps: true,
+});
+
 // Project Expense Schema (separate collection for project-specific expenses)
 const ProjectExpenseSchema: Schema<IProjectExpense> = new Schema({
   projectId: {
@@ -117,8 +151,10 @@ const ProjectExpenseSchema: Schema<IProjectExpense> = new Schema({
 ProjectSchema.index({ createdAt: -1 });
 ProjectExpenseSchema.index({ projectId: 1, createdAt: -1 });
 ExpenseSchema.index({ projectId: 1, date: -1 });
+IncomeSchema.index({ date: -1 }); // NEW: Income index
 
 // To prevent model overwrite errors in development, we check if the model already exists.
 export const Project: Model<IProject> = mongoose.models.Project || mongoose.model<IProject>('Project', ProjectSchema);
 export const Expense: Model<IExpense> = mongoose.models.Expense || mongoose.model<IExpense>('Expense', ExpenseSchema);
+export const Income: Model<IIncome> = mongoose.models.Income || mongoose.model<IIncome>('Income', IncomeSchema); // NEW
 export const ProjectExpense: Model<IProjectExpense> = mongoose.models.ProjectExpense || mongoose.model<IProjectExpense>('ProjectExpense', ProjectExpenseSchema);

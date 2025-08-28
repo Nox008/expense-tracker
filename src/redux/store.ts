@@ -3,11 +3,13 @@
 import { configureStore } from '@reduxjs/toolkit';
 import expensesReducer from './features/expenseSlice';
 import projectsReducer from './features/projectsSlice'; // New projects slice
+import incomeReducer from './features/incomeSlice'; // NEW
 
 export const store = configureStore({
   reducer: {
     expenses: expensesReducer,
     projects: projectsReducer,
+    income: incomeReducer, // NEW
   },
 });
 
